@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Google Sheets CRUD</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        .actions button { margin-right: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <h2>Project Tracker</h2>
+    <input type="text" id="taskInput" placeholder="New Task...">
+    <button onclick="apiCall('CREATE')">Add Task</button>
+
+    <table id="taskTable">
+        <thead>
+            <tr><th>ID</th><th>Task</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+
+    <script>
+        const WEB_APP_URL = "YOUR_DEPLOYED_URL_HERE";
+
+        async function apiCall(action, id = null, task = null) {
+            const val = task || document.getElementById('taskInput').value;
+            
+            if (action === 'READ') {
+                const res = await fetch(WEB_APP_URL);
+                const data = await res.json();
+                render(data);
+            } else {
+                await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action, id, task: val })
+                });
+                document.getElementById('taskInput').value = '';
+                apiCall('READ');
+            }
+        }
+
+        function render(data) {
+            const body = document.getElementById('tableBody');
+            body.innerHTML = data.map(item => `
+                <tr>
+                    <td>${item.ID}</td>
+                    <td>${item.Task}</td>
+                    <td class="actions">
+                        <button onclick="editItem('${item.ID}', '${item.Task}')">Edit</button>
+                        <button style="color:red" onclick="apiCall('DELETE', '${item.ID}')">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function editItem(id, oldTask) {
+            const newTask = prompt("Update Task:", oldTask);
+            if (newTask) apiCall('UPDATE', id, newTask);
+        }
+
+        // Initial Load
+        apiCall('READ');
+    </script>
+</body>
+</html>
